@@ -127,7 +127,6 @@ def my_decorator(func):
 
 @my_decorator
 def my_print(statement):
-    #pass
     print(statement)
 
 
@@ -280,6 +279,7 @@ class Vp(object):
         self.valuetable = VALUETABLE[addition_type]
         self.multi = 1
         self.win = 0
+        self.total_rtp = 0
         self.ctr = 1
         my_print((self.activity, self.addition_type, self.num_sets, self.max_cost, self.credit))
 
@@ -499,7 +499,7 @@ class Vp(object):
 
                 updated_set["numbers"] = held_numbers + updated_numbers
                 updated_set["name"] = get_set_type(updated_set)
-                updated_set["value"] = self.valuetable[updated_set["name"]]
+                updated_set["value"] = self.valuetable[updated_set["name"]]*self.multi
                 total_value += updated_set["value"]
 
                 my_print(( " ".join(updated_set["elements"]), updated_set["name"], updated_set["value"], total_value))
@@ -666,7 +666,7 @@ class Vp(object):
             # update additions
             if self.activity == "fhpw":
                 updated_set["addition"] = self.get_value_fhpw(updated_set)
-            elif self.activity in ("stp", "dstp"):
+            elif self.activity in ("stp", "dstp", "sstk"):
                 updated_set["addition"] = (self.multi - 1) * updated_set["value"]
             elif self.activity == "ultx":
                 if self.set_multis[i] > 1:
@@ -707,10 +707,12 @@ class Vp(object):
             self.win += addition2
 
                 
-        # update credit, ctr
+        # update credit, ctr, rtp
         self.credit += self.win - self.max_cost
-        my_print((self.ctr, -self.max_cost, self.win, self.credit))
-        #print()
+        rtp = self.win / self.max_cost
+        self.total_rtp += rtp
+        my_print((self.ctr, -self.max_cost, self.win, self.credit, rtp))
+        
         if self.automate and self.verbose:
             time.sleep(0.5)
 
@@ -771,17 +773,24 @@ if __name__=="__main__":
         test_vp(vp)
     else:
         final_credit_array = [0]*args.iterations
+        final_rtp_array = [0]*args.iterations
+        if args.iterations > 1:
+            args.verbose = False
+            args.automate = True
+            def my_print(statement):
+                pass
         for ii in range(args.iterations):
             vp = Vp(args.activity, args.addition_type, args.num_sets, args.credit, args.automate, args.verbose)
-            max_ctr = 720
-            while all(( vp.ctr <= max_ctr, vp.credit > vp.max_cost, vp.win < 2000, vp.credit < 4000 )):
+            max_ctr = 360
+            while all(( vp.ctr <= max_ctr, vp.credit > vp.max_cost, vp.win < 2000, vp.credit < args.credit + 1000 )):
                 vp.run()
-                if (vp.ctr > 360 and vp.credit >= args.credit):
-                    break
+            final_rtp_array[ii] = vp.total_rtp / (vp.ctr - 1)
             final_credit_array[ii] = vp.credit
+            if args.iterations == 1:
+                print("mean-rtp:", final_rtp_array[ii])
         if args.iterations > 1:
-            nonzero_credit_array = [x for x in final_credit_array if x > MAX_COST[args.activity] ]
-            print("max:", max(nonzero_credit_array),"mean:",statistics.mean(nonzero_credit_array), "count:", len(nonzero_credit_array) )
+            nonzero_credit_array = [x for x in final_credit_array if x > vp.max_cost ]
+            print("ctr-nfc:", len(nonzero_credit_array), "max-nfc:", max(nonzero_credit_array), "mean-nfc:", statistics.mean(nonzero_credit_array), "mean-rtp", statistics.median(final_rtp_array)  )
 
 
 
