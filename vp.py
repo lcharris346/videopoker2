@@ -41,7 +41,7 @@ VALUETABLE["bd"] =   {" rf": 4000, " sf":  250,
 
 VALUETABLE["db"] = { " rf": 4000, " sf":  250,
                      "  q":  250, "qak":  800, " qa": 800, "qlk": 400, " ql": 400, 
-                     " fh":   40, " fl":   25, "str":  15, "3ok":   5, "2pr":   5, "job": 5, " hc": 0}
+                     " fh":   40, " fl":   25, "str":  20, "3ok":  15, "2pr":   5, "job": 5, " hc": 0}
 
 VALUETABLE["ddb"] = {" rf": 4000, " sf":  250,
                      "  q":  250, "qak": 2000, " qa": 800, "qlk": 800, " ql": 400, 
@@ -51,7 +51,7 @@ VALUETABLE["tdb"] = {" rf": 4000, " sf":  250,
                      "  q":  250, "qak": 4000, " qa": 800, "qlk": 2000, " ql": 400, 
                      " fh":   40, " fl":   25, "str":  20, "3ok":  10, "2pr":   5, "job": 5, " hc": 0}
 
-MAX_COST = {"cl": 5,"fhpw": 10, "pstk": 10, "stp": 6, "dstp": 7, "ultx": 10, "majm": 10, "sstk": 10 }
+MAX_COST = {"cl": 5,"fhpw": 10, "pstk": 10, "stp": 6, "dstp": 7, "ultx": 10, "majm": 10, "sstk": 10, "sptrp": 6 }
 
 CHOICES = ("", "1", "2", "3", "4", "5", "a")
 NUM_SETS = (3,5,10)
@@ -90,38 +90,24 @@ ADDITION["majm"] = {
                         "3ok": [2]*2  + [5]*5   + [8]*8   + [20]*20 + [100]*100, 
                         "2pr": [2]*49 + [6]*24  + [10]*19 + [30]*6  + [100]*2, 
                         }
+ADDITION["sptrp"] = {}
+ADDITION["sptrp"]["job"] = {"qak":4, " qa":4, "qlk":4, " ql":4, "  q":4}
+ADDITION["sptrp"]["b"]   = {"qak":3, " qa":3, "qlk":3, " ql":3, "  q":3.2}
+ADDITION["sptrp"]["bd"] =  {"qak":2, " qa":2, "qlk":2, " ql":2, "  q":2}
+ADDITION["sptrp"]["db"] =  {"qak":2.5, " qa":2.5, "qlk":2.5, " ql":2.5, "  q":2}
+ADDITION["sptrp"]["ddb"] = {"qak":2, " qa":2, "qlk":2, " ql":2, "  q":2}
+ADDITION["sptrp"]["tdb"] = {"qak":1, " qa":2, "qlk":2, " ql":2, "  q":2}
+
+
 
 STR_DIFFS = ([1,1,1],[1,1,2],[1,2,1],[2,1,1])
-
-BUILD_OUT = [
-    "Rebuild started...",
-    "1>------ Skipped Rebuild All: Project: FA18_EF_Common (_Intellisense\\FA18_EF_Common)",
-    "1>Project not selected to build for  this solution configuration",
-    "2>------ Rebuild All started: Project:  MDG_Generation, Configuration: Generic Win32 ------",
-    "3>------ Skipped Rebuild All:  Project: FA18_GPP6 (_Intellisense\\FA18_GPP6)",
-    "3>Project not selected to build  for this solution configuration",
-    "4>------ Skipped Rebuild All:  Project: FA18_GPP5 (_Intellisense\\FA18_GPP5)",
-    "4>Project not selected to build  for this solution configuration",
-    "5>------ Skipped Rebuild All: Project:  FA18_GPP4 (_Intellisense\\FA18_GPP4)",
-    "5>Project not selected to build  for this solution configuration",
-    "B:\\.Build\\USN_EF_GB1_Code\\FA18_GPP_Code_vob \\OFP\\Build\\Windows\\FA18_Common.vcxproj : error  ",
-    ": The imported project B:\\Staging OFP.props was not found. ",
-    "Confirm that the expression in the  Import declaration ",
-    "$(SolutionDir)..\\Staging\\ USN_EF_GB1_Code\\FA18_GPP_Code_vob\\OFP\\Build\\Windows\\Properties\\OFP.props",
-    "which evaluated to B:\\.Build\\.. OFP.props", 
-    "is correct, and that the file  exists on disk.  ",
-    "B:\\.Build\\USN_EF_GB1_Code\\ FA18_GPP_Code_vob\\OFP\\Build\\Windows\\FA18_Common.vcxproj",
-    "B:\\.Build\\USN_EF_GB1_Code\\FA18_GPP_Code_vob \\OFP\\Build\\Windows\\FA18_Common.vcxproj : error ", 
-    ": The imported project B:\\Staging\\ OFP.props was not found.",
-    "Confirm that the expression in the  Import declaration ",
-]
 
 # Functions
 def my_decorator(func):
     def wrapper(statement):
         choice = random.choice(range(20))
         #line = BUILD_OUT[choice] % (str(statement))
-        line = str(statement) +" "+ BUILD_OUT[choice]
+        line = str(statement)
         func(line)
     return wrapper
 
@@ -281,7 +267,14 @@ class Vp(object):
         self.win = 0
         self.total_rtp = 0
         self.ctr = 1
+        self.update_paytable()
         my_print((self.activity, self.addition_type, self.num_sets, self.max_cost, self.credit))
+
+    def update_paytable(self):
+        if self.activity == "cl":
+            for key in VALUETABLE.keys():
+                VALUETABLE[key][" fh"] = 45
+
 
     def set_num_sets(self, num_sets):
         self.num_sets = num_sets
@@ -426,6 +419,14 @@ class Vp(object):
         return value
 
     def get_value_majm(self, addition, name):
+        value = 1
+        if name in addition.keys():
+            value = addition[name]
+            if self.verbose:
+                time.sleep(0.5)
+        return value
+    
+    def get_value_sptrp(self, addition, name):
         value = 1
         if name in addition.keys():
             value = addition[name]
@@ -683,6 +684,10 @@ class Vp(object):
                     if self.set_multis[i] > 1:
                         str_multi1 = str(self.set_multis[i]) + "x"
                         updated_set["addition"] = (self.set_multis[i] - 1) * updated_set["value"]
+            elif self.activity == "sptrp":
+                multi = self.get_value_sptrp(ADDITION["sptrp"][self.addition_type], updated_set["name"])
+                if multi > 1:
+                    updated_set["addition"] = (multi - 1) * updated_set["value"]
 
             updated_set["total_value"] = updated_set["value"] + updated_set["addition"]
             self.win += updated_set["total_value"]
@@ -714,7 +719,7 @@ class Vp(object):
         my_print((self.ctr, -self.max_cost, self.win, self.credit, rtp))
         
         if self.automate and self.verbose:
-            time.sleep(0.5)
+            time.sleep(0.3)
 
         self.ctr += 1
 
@@ -754,11 +759,38 @@ def test_vp2(vp):
     held_elements = [STACK_ELEMENTS[x-1] for x in held_numbers]
     my_print((held_elements))
 
-# Command-line
+# Main Function
+def main(args):
+    if args.testnumber == 1:
+        vp = Vp(args.activity, args.addition_type, args.num_sets, args.credit, args.automate, args.verbose)
+        test_vp(vp)
+    else:
+        final_credit_array = [0]*args.iterations
+        final_rtp_array = [0]*args.iterations
+        for ii in range(args.iterations):
+            vp = Vp(args.activity, args.addition_type, args.num_sets, args.credit, args.automate, args.verbose)
+            max_ctr = 360
+            credit_array = [0]*max_ctr
+            while all(( vp.ctr <= max_ctr, vp.credit > vp.max_cost, vp.win < vp.credit,  vp.credit < 1.5 * args.credit )):
+                vp.run() 
+                credit_array[vp.ctr-2] = vp.credit
+                if vp.ctr > max_ctr * 0.5 and vp.credit >= args.credit:
+                    break
+            final_rtp_array[ii] = vp.total_rtp / (vp.ctr - 1)
+            final_credit_array[ii] = vp.credit
+            if args.iterations == 1:
+                print("mean-rtp:", final_rtp_array[ii])
+                #plt.plot(credit_array[0:vp.ctr-1])
+                #splt.show()
+        if args.iterations > 1:
+            nonzero_credit_array = [x for x in final_credit_array if x > vp.max_cost ]
+            print("ctr-nfc:", len(nonzero_credit_array), "max-nfc:", max(nonzero_credit_array), "mean-nfc:", statistics.mean(nonzero_credit_array), "mean-rtp", statistics.median(final_rtp_array)  )
+
+# Command-line Execution
 if __name__=="__main__":
     #args
     parser = argparse.ArgumentParser(description="vp")
-    parser.add_argument("-g", "--activity", default="fhpw", help="activity:cl, fhpw, pstk, stp, dstp, ultx, majm, sstk")
+    parser.add_argument("-g", "--activity", default="fhpw", help="activity:cl,fhpw,pstk,stp,dstp,ultx,majm,sstk,sptrp")
     parser.add_argument("-b", "--addition_type", default="ddb", help="addition_type:job,b,db,ddb,tdb")
     parser.add_argument("-n", "--num_sets", type=int, default=5, help="num_sets")
     parser.add_argument("-c", "--credit", type=int, default=2000, help="credit")
@@ -767,30 +799,13 @@ if __name__=="__main__":
     parser.add_argument("-t", "--testnumber", type=int, default=0, help="testnumber")
     parser.add_argument("-i", "--iterations", type=int, default=1, help="iterations")
     args = parser.parse_args()
-    # execute
-    if args.testnumber == 1:
-        vp = Vp(args.activity, args.addition_type, args.num_sets, args.credit, args.automate, args.verbose)
-        test_vp(vp)
-    else:
-        final_credit_array = [0]*args.iterations
-        final_rtp_array = [0]*args.iterations
-        if args.iterations > 1:
-            args.verbose = False
-            args.automate = True
-            def my_print(statement):
-                pass
-        for ii in range(args.iterations):
-            vp = Vp(args.activity, args.addition_type, args.num_sets, args.credit, args.automate, args.verbose)
-            max_ctr = 360
-            while all(( vp.ctr <= max_ctr, vp.credit > vp.max_cost, vp.win < 2000, vp.credit < args.credit + 1000 )):
-                vp.run()
-            final_rtp_array[ii] = vp.total_rtp / (vp.ctr - 1)
-            final_credit_array[ii] = vp.credit
-            if args.iterations == 1:
-                print("mean-rtp:", final_rtp_array[ii])
-        if args.iterations > 1:
-            nonzero_credit_array = [x for x in final_credit_array if x > vp.max_cost ]
-            print("ctr-nfc:", len(nonzero_credit_array), "max-nfc:", max(nonzero_credit_array), "mean-nfc:", statistics.mean(nonzero_credit_array), "mean-rtp", statistics.median(final_rtp_array)  )
+    if args.iterations > 1:
+        args.verbose = False
+        args.automate = True
+        def my_print(statement):
+            pass
+    main(args)
+    
 
 
 
