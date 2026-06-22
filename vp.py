@@ -771,10 +771,13 @@ def main(args):
             vp = Vp(args.activity, args.addition_type, args.num_sets, args.credit, args.automate, args.verbose)
             max_ctr = 360
             credit_array = [0]*max_ctr
+            net_50_loss = False
             while all(( vp.ctr <= max_ctr, vp.credit > vp.max_cost, vp.win < vp.credit,  vp.credit < 1.5 * args.credit )):
                 vp.run() 
+                if net_50_loss == False:
+                    net_50_loss = (vp.credit < args.credit/2.0)
                 credit_array[vp.ctr-2] = vp.credit
-                if vp.ctr > max_ctr * 0.5 and vp.credit >= args.credit:
+                if net_50_loss == True and vp.credit >= args.credit:
                     break
             final_rtp_array[ii] = vp.total_rtp / (vp.ctr - 1)
             final_credit_array[ii] = vp.credit
@@ -783,7 +786,7 @@ def main(args):
                 #plt.plot(credit_array[0:vp.ctr-1])
                 #splt.show()
         if args.iterations > 1:
-            nonzero_credit_array = [x for x in final_credit_array if x > vp.max_cost ]
+            nonzero_credit_array = [x for x in final_credit_array if x > args.credit ]
             print("ctr-nfc:", len(nonzero_credit_array), "max-nfc:", max(nonzero_credit_array), "mean-nfc:", statistics.mean(nonzero_credit_array), "mean-rtp", statistics.median(final_rtp_array)  )
 
 # Command-line Execution
