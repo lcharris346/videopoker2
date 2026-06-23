@@ -101,17 +101,21 @@ ADDITION["php"] = { " rf":  1, " sf":  1,
                     "  q":  1, "qak":  1, " qa":  1, "qlk":  1, " ql":  1, 
                     " fh":  6, " fl":  5, "str":  4, "3ok":  3, "2pr":  2, "job": 1  }
 
-
-
-
 STR_DIFFS = ([1,1,1],[1,1,2],[1,2,1],[2,1,1])
+
+#BUILD_OUT = [
+#    " testing"
+#]
+
+BUILD_OUT = [
+
+]
 
 # Functions
 def my_decorator(func):
     def wrapper(statement):
-        choice = random.choice(range(20))
-        #line = BUILD_OUT[choice] % (str(statement))
-        line = str(statement)
+        choice = random.choice(range(len(BUILD_OUT)))
+        line = str(statement).replace("'","") + BUILD_OUT[choice]
         func(line)
     return wrapper
 
@@ -257,12 +261,21 @@ def get_set_type(updated_set):
     return name
 
 
-# Classes
+
+
+
+
+
+
+
+
+
+
+######################################## CLASSES  ########################################
 class Vp(object):
     def __init__(self, activity, addition_type, num_sets, credit, automate, verbose):
         self.activity = activity
         self.addition_type = addition_type
-        self.set_num_sets(num_sets)
         self.credit = credit
         self.automate = automate
         self.verbose = verbose
@@ -273,6 +286,11 @@ class Vp(object):
         self.ctr = 1
         self.activity_ctr = 0
         self.acc_ctr = 0
+        self.num_sets = num_sets
+        self.set_multis = [0]*self.num_sets
+        self.max_cost = self.num_sets * MAX_COST[self.activity]
+        self.cost = self.max_cost
+        self.set_num_sets(num_sets)
         self.update_paytable()
         my_print((self.activity, self.addition_type, self.num_sets, self.max_cost, self.credit))
         random.seed()
@@ -288,6 +306,7 @@ class Vp(object):
         if self.activity == "sptrp":
             self.num_sets = 3
         self.max_cost = self.num_sets * MAX_COST[self.activity]
+        self.cost = self.max_cost
         self.set_multis = [0]*self.num_sets
         my_print("num_sets:" + str(num_sets))
 
@@ -424,7 +443,7 @@ class Vp(object):
     def get_value_cl(self):
         value = 0
         if self.verbose:
-            time.sleep(0.5)
+            time.sleep(0.1)
         return value
 
     def get_value_majm(self, addition, name):
@@ -460,9 +479,10 @@ class Vp(object):
 
             if self.verbose:
                 for ii in range(10):
-                    time.sleep(0.2)
-                    my_print((addition_values[ii]))
-                time.sleep(1)
+                    time.sleep(0.1)
+                    #os.system("cls")
+                    print(addition_values[ii])
+                time.sleep(0.5)
 
             value = addition_values[9]
             my_print((value))
@@ -481,8 +501,9 @@ class Vp(object):
 
             if self.verbose:
                 for ii in range(10):
-                    time.sleep(0.2)
-                    my_print((addition_values[ii]))
+                    time.sleep(0.1)
+                    #os.system("cls")
+                    print(addition_values[ii])
                 time.sleep(0.5)
 
             multi = addition_values[9]
@@ -622,23 +643,25 @@ class Vp(object):
         addition = None
         activity_ctr_incr = False
 
+
         #pre-update additions
-        if self.activity in ("stp", "dstp", "sstk"):
-            self.multi = self.get_value_stp()
-            if self.multi > 1 and activity_ctr_incr == False:
+        if self.cost == self.max_cost:
+            if self.activity in ("stp", "dstp", "sstk"):
+                self.multi = self.get_value_stp()
+                if self.multi > 1 and activity_ctr_incr == False:
+                    self.activity_ctr += 1
+                    activity_ctr_incr = True
+            elif self.activity == "cl":
+                self.get_value_cl()
+            elif self.activity == "majm" and dealt_set["name"]  in ( "job", "2pr", "3ok"):
                 self.activity_ctr += 1
-                activity_ctr_incr = True
-        elif self.activity == "cl":
-            self.get_value_cl()
-        elif self.activity == "majm" and dealt_set["name"]  in ( "job", "2pr", "3ok"):
-            self.activity_ctr += 1
-            addition = copy.deepcopy(ADDITION["majm"])
-            for key in addition.keys():
-                addition[key] = random.choice(addition[key])
-            my_print("addition")
-            my_print(addition)
-            if self.verbose and self.automate:
-                time.sleep(1)
+                addition = copy.deepcopy(ADDITION["majm"])
+                for key in addition.keys():
+                    addition[key] = random.choice(addition[key])
+                my_print("addition")
+                my_print(addition)
+                if self.verbose and self.automate:
+                    time.sleep(0.5)
 
 
         # select elements
@@ -714,87 +737,95 @@ class Vp(object):
         num_elements2update = 5 - len(held_numbers)
 
         for i in range(self.num_sets):
+            # add values
             updated_set = copy.deepcopy(UPDATED_SET)
             updated_set["numbers"] = held_numbers + random.sample(remaining_deck, num_elements2update)
             updated_set["name"] = get_set_type(updated_set)
             updated_set["value"] = self.valuetable[updated_set["name"]]
 
+            # update additions
             str_multi1 = ""
             str_multi2 = ""
-            # update additions
-            if self.activity == "fhpw":
-                updated_set["addition"] = self.get_value_fhpw(updated_set)
-                if activity_ctr_incr == False and updated_set["addition"] > 0:
-                    self.activity_ctr += 1
-                    activity_ctr_incr = True
-            elif self.activity in ("stp", "dstp", "sstk"):
-                updated_set["addition"] = (self.multi - 1) * updated_set["value"]
-            elif self.activity == "ultx":
-                if self.set_multis[i] > 1:
-                    str_multi1 = str(self.set_multis[i]) + "x"
-                    updated_set["addition"] = (self.set_multis[i] - 1) * updated_set["value"]
-                    if activity_ctr_incr == False:
+            updated_set["addition"] = 0
+            if self.cost == self.max_cost:
+                
+                if self.activity == "fhpw":
+                    updated_set["addition"] = self.get_value_fhpw(updated_set)
+                    if activity_ctr_incr == False and updated_set["addition"] > 0:
                         self.activity_ctr += 1
                         activity_ctr_incr = True
-                self.set_multis[i] =  self.get_value_ultx(updated_set["name"]) 
-                if self.set_multis[i] > 1:
-                    str_multi2 = str(self.set_multis[i]) + "x"
-            elif self.activity == "majm":
-                self.set_multis[i] = 1
-                if addition:
-                    self.set_multis[i] = self.get_value_majm(addition, updated_set["name"])
+                elif self.activity in ("stp", "dstp", "sstk"):
+                    updated_set["addition"] = (self.multi - 1) * updated_set["value"]
+                elif self.activity == "ultx":
                     if self.set_multis[i] > 1:
                         str_multi1 = str(self.set_multis[i]) + "x"
                         updated_set["addition"] = (self.set_multis[i] - 1) * updated_set["value"]
-            elif self.activity == "sptrp":
-                multi = self.get_value_sptrp(ADDITION["sptrp"][self.addition_type], updated_set["name"])
-                if multi > 1:
-                    if activity_ctr_incr == False:
-                        self.activity_ctr += 1
-                        activity_ctr_incr = True
-                    updated_set["addition"] = (multi - 1) * updated_set["value"]
+                        if activity_ctr_incr == False:
+                            self.activity_ctr += 1
+                            activity_ctr_incr = True
+                    self.set_multis[i] =  self.get_value_ultx(updated_set["name"]) 
+                    if self.set_multis[i] > 1:
+                        str_multi2 = str(self.set_multis[i]) + "x"
+                elif self.activity == "majm":
+                    self.set_multis[i] = 1
+                    if addition:
+                        self.set_multis[i] = self.get_value_majm(addition, updated_set["name"])
+                        if self.set_multis[i] > 1:
+                            str_multi1 = str(self.set_multis[i]) + "x"
+                            updated_set["addition"] = (self.set_multis[i] - 1) * updated_set["value"]
+                elif self.activity == "sptrp":
+                    multi = self.get_value_sptrp(ADDITION["sptrp"][self.addition_type], updated_set["name"])
+                    if multi > 1:
+                        if activity_ctr_incr == False:
+                            self.activity_ctr += 1
+                            activity_ctr_incr = True
+                        updated_set["addition"] = (multi - 1) * updated_set["value"]
 
+            # update total value
             updated_set["total_value"] = updated_set["value"] + updated_set["addition"]
+
+            # update win
             self.win += updated_set["total_value"]
 
             my_print((str_multi1, " ".join(updated_set["elements"]), updated_set["name"], updated_set["value"], updated_set["addition"], str_multi2))
 
-                
-        # post-update addition
-        if self.activity == "pstk":
-            addition2 = self.get_value_pstk(dealt_set["name"], held_numbers, remaining_deck)
-            if addition2 > 0 and activity_ctr_incr == False:
-                self.activity_ctr += 1
-                activity_ctr_incr = True
-            self.win += addition2
+        # post-update additions
+        if self.cost == self.max_cost:
+            if self.activity == "pstk":
+                addition2 = self.get_value_pstk(dealt_set["name"], held_numbers, remaining_deck)
+                if addition2 > 0 and activity_ctr_incr == False:
+                    self.activity_ctr += 1
+                    activity_ctr_incr = True
+                self.win += addition2
 
-        elif self.activity == "php":
-            addition2 = self.get_value_php(dealt_set["name"], held_numbers, remaining_deck)
-            if addition2 > 0 and activity_ctr_incr == False:
-                self.activity_ctr += 1
-                activity_ctr_incr = True
-            self.win += addition2
+            elif self.activity == "php":
+                addition2 = self.get_value_php(dealt_set["name"], held_numbers, remaining_deck)
+                if addition2 > 0 and activity_ctr_incr == False:
+                    self.activity_ctr += 1
+                    activity_ctr_incr = True
+                self.win += addition2
 
-        elif self.activity == "dstp":
-            multi2 = self.get_value_stp()
-            addition2 = (multi2 - 1) * updated_set["value"]
-            updated_set["addition"] += addition2
-            updated_set["total_value"] += addition2
-            if addition2 > 0 and activity_ctr_incr == False:
-                self.activity_ctr += 1
-                activity_ctr_incr = True 
-            self.win += addition2
+            elif self.activity == "dstp":
+                multi2 = self.get_value_stp()
+                addition2 = (multi2 - 1) * updated_set["value"]
+                updated_set["addition"] += addition2
+                updated_set["total_value"] += addition2
+                if addition2 > 0 and activity_ctr_incr == False:
+                    self.activity_ctr += 1
+                    activity_ctr_incr = True 
+                self.win += addition2
 
-        elif self.activity == "sstk":
-            addition2 = self.get_value_sstk(held_numbers, remaining_deck)
-            self.win += addition2
+            elif self.activity == "sstk":
+                addition2 = self.get_value_sstk(held_numbers, remaining_deck)
+                self.win += addition2
 
                 
         # update credit, ctr, rtp
-        self.credit += self.win - self.max_cost
-        rtp = self.win / self.max_cost
+        self.win = self.win * self.cost / self.max_cost
+        self.credit += self.win - self.cost
+        rtp = self.win / self.cost
         self.total_rtp += rtp
-        my_print((self.ctr, -self.max_cost, self.win, self.credit, rtp))
+        my_print((self.ctr, -self.cost, self.win, self.credit, rtp))
         
         if self.automate and self.verbose:
             time.sleep(0.3)
@@ -847,8 +878,7 @@ def main(args):
         final_rtp_array = [0]*args.iterations
         activity_ctr_array = [0]*args.iterations
         ctr_array = [0]*args.iterations
-        hp  = 1000
-        prf = 1000
+        threshold  = 1000
         succ_cnt = 0
         for ii in range(args.iterations):
             vp = Vp(args.activity, args.addition_type, args.num_sets, args.credit, args.automate, args.verbose)
@@ -856,15 +886,19 @@ def main(args):
             credit_array = [0]*max_ctr
             net_50_loss = False
 
-            while all((vp.ctr < max_ctr, vp.credit >= vp.max_cost)):
+            while vp.credit >= vp.cost:
                 vp.run()
                 credit_array[vp.ctr-2] = vp.credit
 
-                if vp.win >= hp: 
+                if vp.ctr >= max_ctr:
                     succ_cnt += 1
                     break
 
-                if vp.credit >= args.credit + prf:
+                if vp.win >= threshold: 
+                    succ_cnt += 1
+                    break
+
+                if vp.credit >= args.credit + threshold:
                     succ_cnt += 1
                     break
 
@@ -877,21 +911,27 @@ def main(args):
                 #plt.plot(credit_array[0:vp.ctr-1])
                 #splt.show()
         if args.iterations > 1:
-            print("succ_cnt:", succ_cnt, "max-cr:", max(final_credit_array), "mean-cr:", statistics.mean(final_credit_array),
-                 "mean-rtp", statistics.median(final_rtp_array), "mean-act:", statistics.mean(activity_ctr_array),"mean-ctr:", statistics.mean(ctr_array))
+            succ_ctr_array = [x for ii, x in enumerate(ctr_array) if final_credit_array[ii] > vp.cost ]
+            succ_credit_array = [x for ii, x in enumerate(final_credit_array) if final_credit_array[ii] > vp.cost ]
+            print("succ-pct:", succ_cnt/args.iterations,
+                  "mean-succ-ctr:", statistics.mean(succ_ctr_array),
+                  "max-succ-prf:", max(succ_credit_array)-args.credit, "mean-succ-pft:", statistics.mean(succ_credit_array)-args.credit,
+                  "mean-act:", statistics.mean(activity_ctr_array), 
+                  "mean-rtp", statistics.median(final_rtp_array))
 
 # Command-line Execution
 if __name__=="__main__":
     #args
     parser = argparse.ArgumentParser(description="vp")
-    parser.add_argument("-g", "--activity", default="fhpw", help="activity:cl,fhpw,pstk,stp,dstp,ultx,majm,sstk,sptrp,php")
-    parser.add_argument("-b", "--addition_type", default="ddb", help="addition_type:job,b,db,ddb,tdb")
-    parser.add_argument("-n", "--num_sets", type=int, default=5, help="num_sets")
     parser.add_argument("-c", "--credit", type=int, default=2000, help="credit")
+    parser.add_argument("-g", "--activity", default="fhpw", help="activity:cl,sptrp,stp,dstp,sstk,pstk,php,ultx,fhpw,majm")
+    parser.add_argument("-n", "--num_sets", type=int, default=5, help="num_sets")
+    parser.add_argument("-b", "--addition_type", default="ddb", help="addition_type:job,b,db,ddb,tdb")
+    parser.add_argument("-i", "--iterations", type=int, default=1, help="iterations")
     parser.add_argument("-a", "--automate", action="store_true", help="test")
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose")
     parser.add_argument("-t", "--testnumber", type=int, default=0, help="testnumber")
-    parser.add_argument("-i", "--iterations", type=int, default=1, help="iterations")
+    
     args = parser.parse_args()
     if args.iterations > 1:
         args.verbose = False
