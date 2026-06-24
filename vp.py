@@ -103,12 +103,8 @@ ADDITION["php"] = { " rf":  1, " sf":  1,
 
 STR_DIFFS = ([1,1,1],[1,1,2],[1,2,1],[2,1,1])
 
-#BUILD_OUT = [
-#    " testing"
-#]
-
 BUILD_OUT = [
-
+    " testing"
 ]
 
 # Functions
@@ -511,7 +507,32 @@ class Vp(object):
 
         return multi
 
-    def get_value_sstk(self, held_numbers, remaining_deck):
+    def get_value_sstk1(self):
+
+        self.multi = 1
+        draw = random.choice(range(11))
+        
+        if draw == 10:
+            my_print((" addition"))
+            addition_values = copy.deepcopy(ADDITION["stp"]["values"])
+            random.shuffle(addition_values)
+
+            if self.verbose:
+                for ii in range(10):
+                    time.sleep(0.1)
+                    #os.system("cls")
+                    print(addition_values[ii])
+                time.sleep(0.5)
+
+            self.multi = addition_values[9]
+            my_print((self.multi))
+
+            if self.verbose:
+                time.sleep(0.1)
+
+        return self.multi
+
+    def get_value_sstk2(self, held_numbers, remaining_deck):
 
         total_value = 0
 
@@ -646,8 +667,13 @@ class Vp(object):
 
         #pre-update additions
         if self.cost == self.max_cost:
-            if self.activity in ("stp", "dstp", "sstk"):
+            if self.activity in ("stp", "dstp"):
                 self.multi = self.get_value_stp()
+                if self.multi > 1 and activity_ctr_incr == False:
+                    self.activity_ctr += 1
+                    activity_ctr_incr = True
+            elif self.activity == "sstk":
+                self.multi = self.get_value_sstk1()
                 if self.multi > 1 and activity_ctr_incr == False:
                     self.activity_ctr += 1
                     activity_ctr_incr = True
@@ -816,7 +842,7 @@ class Vp(object):
                 self.win += addition2
 
             elif self.activity == "sstk":
-                addition2 = self.get_value_sstk(held_numbers, remaining_deck)
+                addition2 = self.get_value_sstk2(held_numbers, remaining_deck)
                 self.win += addition2
 
                 
