@@ -227,15 +227,16 @@ for key in KEYS_SYMBOLS:
     DISTRO_SYMBOLS += [key,]*cnt
 
 MNY = {
-    " 1x": {"worth":    1, "lines": [], "pay_lines": [],  "value": 0},
-    " 2x": {"worth":    2, "lines": [], "pay_lines": [],  "value": 0},
-    " 3x": {"worth":    3, "lines": [], "pay_lines": [],  "value": 0},
-    " 4x": {"worth":    4, "lines": [], "pay_lines": [],  "value": 0},
-    " 5x": {"worth":    5, "lines": [], "pay_lines": [],  "value": 0},
+    "1x ": {"worth":    1, "lines": [], "pay_lines": [],  "value": 0},
+    "2x ": {"worth":    2, "lines": [], "pay_lines": [],  "value": 0},
+    "3x ": {"worth":    3, "lines": [], "pay_lines": [],  "value": 0},
+    "4x ": {"worth":    4, "lines": [], "pay_lines": [],  "value": 0},
+    "5x ": {"worth":    5, "lines": [], "pay_lines": [],  "value": 0},
     "MNI": {"worth":   50, "lines": [], "pay_lines": [],  "value": 0},
     "MNR": {"worth":  100, "lines": [], "pay_lines": [],  "value": 0},
     "MXI": {"worth":  200, "lines": [], "pay_lines": [],  "value": 0},
     "MJR": {"worth":  500, "lines": [], "pay_lines": [],  "value": 0},
+    "GRD": {"worth":10000, "lines": [], "pay_lines": [],  "value": 0},
 }
 GRAND_WORTH = MNY["MJR"]["worth"]*10
 KEYS_MNY = list(MNY.keys())
@@ -336,6 +337,7 @@ class SL(object):
             my_print(("H&S", spins, "left"))
             orb_falls = False
             orbs = 0
+            grand_hit = False
             for row in range(3):
                 for col in range(5):
                     if rows[row][col] not in KEYS_MNY:
@@ -351,12 +353,14 @@ class SL(object):
                     else:
                         orbs += MNY[rows[row][col]]["worth"]
                         num_orbs += 1
+                    if rows[row][col] == "GRD":
+                        grand_hit = True
                             
                 row_str = str(rows[row]).replace("'","")
                 my_print(row_str)
-            if num_orbs > 14:
-                if self.verbose:
-                    print(self.ctr, "GRAND!")
+            if grand_hit or num_orbs > 14:
+                #if self.verbose:
+                print(self.ctr, "GRAND!")
                 total_addition += GRAND_WORTH
                 return total_addition
 
