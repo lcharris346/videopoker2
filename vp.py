@@ -269,10 +269,11 @@ def get_set_type(updated_set):
 
 ######################################## CLASSES  ########################################
 class Vp(object):
-    def __init__(self, activity, addition_type, num_sets, credit, automate, verbose):
+    def __init__(self, activity, addition_type, num_sets, credit, denom, automate, verbose):
         self.activity = activity
         self.addition_type = addition_type
         self.credit = credit
+        self.denom = denom
         self.automate = automate
         self.verbose = verbose
         self.valuetable = VALUETABLE[addition_type]
@@ -284,7 +285,7 @@ class Vp(object):
         self.acc_ctr = 0
         self.num_sets = num_sets
         self.set_multis = [0]*self.num_sets
-        self.max_cost = self.num_sets * MAX_COST[self.activity]
+        self.max_cost = self.denom * self.num_sets * MAX_COST[self.activity]
         self.cost = self.max_cost
         self.set_num_sets(num_sets)
         self.update_paytable()
@@ -299,9 +300,7 @@ class Vp(object):
 
     def set_num_sets(self, num_sets):
         self.num_sets = num_sets
-        if self.activity == "sptrp":
-            self.num_sets = 3
-        self.max_cost = self.num_sets * MAX_COST[self.activity]
+        self.max_cost = self.denom * self.num_sets * MAX_COST[self.activity]
         self.cost = self.max_cost
         self.set_multis = [0]*self.num_sets
         my_print("num_sets:" + str(num_sets))
@@ -806,6 +805,11 @@ class Vp(object):
                             self.activity_ctr += 1
                             activity_ctr_incr = True
                         updated_set["addition"] = (multi - 1) * updated_set["value"]
+                elif self.activity == "cl":
+                    if updated_set["value"] >= 125:
+                        if activity_ctr_incr == False:
+                            self.activity_ctr += 1
+                            activity_ctr_incr = True
 
             # update total value
             updated_set["total_value"] = updated_set["value"] + updated_set["addition"]
@@ -847,11 +851,11 @@ class Vp(object):
 
                 
         # update credit, ctr, rtp
-        self.win = self.win * self.cost / self.max_cost
+        self.win = self.win * self.denom
         self.credit += self.win - self.cost
         rtp = self.win / self.cost
         self.total_rtp += rtp
-        my_print((self.ctr, -self.cost, self.win, self.credit, rtp))
+        my_print((self.ctr, -self.cost, self.win, self.credit, round(rtp,3)))
         
         if self.automate and self.verbose:
             time.sleep(0.3)
@@ -860,45 +864,14 @@ class Vp(object):
 
 # Tests
 
-def test_vp(vp):
-    updated_set = copy.deepcopy(UPDATED_SET)
-    updated_elements = input("Enter: ").split(" ")
-    updated_set["numbers"] = [STACK_ELEMENTS_DICT[x] for x in updated_elements if x in STACK_ELEMENTS_DICT.keys()]
-    updated_set["name"] = get_set_type(updated_set)
-    updated_set["value"] = vp.valuetable[updated_set["name"]]
-    remaining_deck = [x for x in copy.deepcopy(STACK) if x not in updated_set["numbers"]]
-    random.shuffle(remaining_deck)
-    if vp.activity == "fhpw":
-        updated_set["addition"] = vp.get_value_fhpw(updated_set)
-    elif vp.activity == "stp":
-        updated_set["addition"] = (vp.multi - 1) * updated_set["value"]
-    if vp.activity == "pstk":
-        updated_set["addition"] = vp.get_value_pstk(updated_set["name"], updated_set["numbers"][:3],  remaining_deck)
-    my_print((updated_set))
-
-def test_vp2(vp):
-    updated_set = copy.deepcopy(UPDATED_SET)
-
-    # user input
-    updated_elements = input("Enter: ").split(" ")
-    updated_set["numbers"] = [STACK_ELEMENTS_DICT[x] for x in updated_elements if x in STACK_ELEMENTS_DICT.keys()]
-
-    # random draw
-    #deck = copy.deepcopy(STACK)
-    #random.shuffle(deck)
-    #updated_set["numbers"] = deck[:5]
-
-    updated_set["name"] = get_set_type(updated_set)
-    my_print((updated_set["name"],updated_set["sorted_elements"], updated_set["sorted_priorities"],updated_set["sorted_numbers"]))
-    held_numbers = vp.algorithm1(updated_set)
-    held_elements = [STACK_ELEMENTS[x-1] for x in held_numbers]
-    my_print((held_elements))
+def test(vp):
+    pass
 
 # Main Function
 def main(args):
-    if args.testnumber == 1:
-        vp = Vp(args.activity, args.addition_type, args.num_sets, args.credit, args.automate, args.verbose)
-        test_vp(vp)
+    if args.test == True:
+        vp = Vp(args.activity, args.addition_type, args.num_sets, args.credit, args.denom, args.automate, args.verbose)
+        test(vp)
     else:
         final_credit_array = [0]*args.iterations
         final_rtp_array = [0]*args.iterations
@@ -907,14 +880,16 @@ def main(args):
         threshold  = 1000
         succ_cnt = 0
         for ii in range(args.iterations):
-            vp = Vp(args.activity, args.addition_type, args.num_sets, args.credit, args.automate, args.verbose)
-            max_ctr = 180
+            vp = Vp(args.activity, args.addition_type, args.num_sets, args.credit, args.denom, args.automate, args.verbose)
+            max_ctr = 180 # Divide by 12 to get ave min
             credit_array = [0]*max_ctr
             net_50_loss = False
+            ctr = 0
+            fourth_credit = False
 
             while vp.credit >= vp.cost:
                 vp.run()
-                credit_array[vp.ctr-2] = vp.credit
+                credit_array[ctr] = vp.credit
 
                 if vp.ctr >= max_ctr:
                     succ_cnt += 1
@@ -927,6 +902,8 @@ def main(args):
                 if vp.credit >= args.credit + threshold:
                     succ_cnt += 1
                     break
+
+                ctr += 1
 
             final_rtp_array[ii] = vp.total_rtp / (vp.ctr - 1)
             final_credit_array[ii] = vp.credit
@@ -949,14 +926,15 @@ def main(args):
 if __name__=="__main__":
     #args
     parser = argparse.ArgumentParser(description="vp")
-    parser.add_argument("-c", "--credit", type=int, default=2000, help="credit")
+    parser.add_argument("-c", "--credit", type=float, default=1000, help="credit")
+    parser.add_argument("-d", "--denom", type=float, default=0.25, help="denom")
     parser.add_argument("-g", "--activity", default="fhpw", help="activity:cl,sptrp,stp,dstp,sstk,pstk,php,ultx,fhpw,majm")
     parser.add_argument("-n", "--num_sets", type=int, default=5, help="num_sets")
     parser.add_argument("-b", "--addition_type", default="ddb", help="addition_type:job,b,db,ddb,tdb")
     parser.add_argument("-i", "--iterations", type=int, default=1, help="iterations")
-    parser.add_argument("-a", "--automate", action="store_true", help="test")
+    parser.add_argument("-a", "--automate", action="store_true", help="automate")
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose")
-    parser.add_argument("-t", "--testnumber", type=int, default=0, help="testnumber")
+    parser.add_argument("-t", "--test", action="store_true", help="test")
     
     args = parser.parse_args()
     if args.iterations > 1:
