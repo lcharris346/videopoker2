@@ -103,15 +103,13 @@ ADDITION["php"] = { " rf":  1, " sf":  1,
 
 STR_DIFFS = ([1,1,1],[1,1,2],[1,2,1],[2,1,1])
 
-BUILD_OUT = [
-    " testing"
-]
+BUILD_OUT = open("sample.txt").readlines()
 
 # Functions
 def my_decorator(func):
     def wrapper(statement):
         choice = random.choice(range(len(BUILD_OUT)))
-        line = str(statement).replace("'","") + BUILD_OUT[choice]
+        line = str(statement).replace("'","") + BUILD_OUT[choice].rstrip()
         func(line)
     return wrapper
 
@@ -281,7 +279,7 @@ class Vp(object):
         self.win = 0
         self.total_rtp = 0
         self.ctr = 1
-        self.activity_ctr = 0
+        self.addition_ctr = 0
         self.acc_ctr = 0
         self.num_sets = num_sets
         self.set_multis = [0]*self.num_sets
@@ -453,6 +451,10 @@ class Vp(object):
         value = 1
         if name in addition.keys():
             value = addition[name]
+            if value > 1:
+                my_print((" addition"))
+                if self.verbose:
+                    input()
             if self.verbose:
                 time.sleep(0.5)
         return value
@@ -661,26 +663,28 @@ class Vp(object):
         dealt_set["name"] = get_set_type(dealt_set)
         remaining_deck = deck[5:]
         addition = None
-        activity_ctr_incr = False
+        addition_ctr_incr = False
 
 
         #pre-update additions
         if self.cost == self.max_cost:
             if self.activity in ("stp", "dstp"):
                 self.multi = self.get_value_stp()
-                if self.multi > 1 and activity_ctr_incr == False:
-                    self.activity_ctr += 1
-                    activity_ctr_incr = True
+                if self.multi > 1 and addition_ctr_incr == False:
+                    self.addition_ctr += 1
+                    addition_ctr_incr = True
             elif self.activity == "sstk":
                 self.multi = self.get_value_sstk1()
-                if self.multi > 1 and activity_ctr_incr == False:
-                    self.activity_ctr += 1
-                    activity_ctr_incr = True
+                if self.multi > 1 and addition_ctr_incr == False:
+                    self.addition_ctr += 1
+                    addition_ctr_incr = True
             elif self.activity == "cl":
                 self.get_value_cl()
             elif self.activity == "majm" and dealt_set["name"]  in ( "job", "2pr", "3ok"):
-                self.activity_ctr += 1
+                self.addition_ctr += 1
                 addition = copy.deepcopy(ADDITION["majm"])
+                if dealt_set["name"] in addition.keys():
+                    addition.pop(dealt_set["name"])
                 for key in addition.keys():
                     addition[key] = random.choice(addition[key])
                 my_print("addition")
@@ -776,18 +780,18 @@ class Vp(object):
                 
                 if self.activity == "fhpw":
                     updated_set["addition"] = self.get_value_fhpw(updated_set)
-                    if activity_ctr_incr == False and updated_set["addition"] > 0:
-                        self.activity_ctr += 1
-                        activity_ctr_incr = True
+                    if addition_ctr_incr == False and updated_set["addition"] > 0:
+                        self.addition_ctr += 1
+                        addition_ctr_incr = True
                 elif self.activity in ("stp", "dstp", "sstk"):
                     updated_set["addition"] = (self.multi - 1) * updated_set["value"]
                 elif self.activity == "ultx":
                     if self.set_multis[i] > 1:
                         str_multi1 = str(self.set_multis[i]) + "x"
                         updated_set["addition"] = (self.set_multis[i] - 1) * updated_set["value"]
-                        if activity_ctr_incr == False:
-                            self.activity_ctr += 1
-                            activity_ctr_incr = True
+                        if addition_ctr_incr == False:
+                            self.addition_ctr += 1
+                            addition_ctr_incr = True
                     self.set_multis[i] =  self.get_value_ultx(updated_set["name"]) 
                     if self.set_multis[i] > 1:
                         str_multi2 = str(self.set_multis[i]) + "x"
@@ -801,15 +805,16 @@ class Vp(object):
                 elif self.activity == "sptrp":
                     multi = self.get_value_sptrp(ADDITION["sptrp"][self.addition_type], updated_set["name"])
                     if multi > 1:
-                        if activity_ctr_incr == False:
-                            self.activity_ctr += 1
-                            activity_ctr_incr = True
+                        str_multi1 = str(multi) + "x"
+                        if addition_ctr_incr == False:
+                            self.addition_ctr += 1
+                            addition_ctr_incr = True
                         updated_set["addition"] = (multi - 1) * updated_set["value"]
                 elif self.activity == "cl":
                     if updated_set["value"] >= 125:
-                        if activity_ctr_incr == False:
-                            self.activity_ctr += 1
-                            activity_ctr_incr = True
+                        if addition_ctr_incr == False:
+                            self.addition_ctr += 1
+                            addition_ctr_incr = True
 
             # update total value
             updated_set["total_value"] = updated_set["value"] + updated_set["addition"]
@@ -823,16 +828,16 @@ class Vp(object):
         if self.cost == self.max_cost:
             if self.activity == "pstk":
                 addition2 = self.get_value_pstk(dealt_set["name"], held_numbers, remaining_deck)
-                if addition2 > 0 and activity_ctr_incr == False:
-                    self.activity_ctr += 1
-                    activity_ctr_incr = True
+                if addition2 > 0 and addition_ctr_incr == False:
+                    self.addition_ctr += 1
+                    addition_ctr_incr = True
                 self.win += addition2
 
             elif self.activity == "php":
                 addition2 = self.get_value_php(dealt_set["name"], held_numbers, remaining_deck)
-                if addition2 > 0 and activity_ctr_incr == False:
-                    self.activity_ctr += 1
-                    activity_ctr_incr = True
+                if addition2 > 0 and addition_ctr_incr == False:
+                    self.addition_ctr += 1
+                    addition_ctr_incr = True
                 self.win += addition2
 
             elif self.activity == "dstp":
@@ -840,9 +845,9 @@ class Vp(object):
                 addition2 = (multi2 - 1) * updated_set["value"]
                 updated_set["addition"] += addition2
                 updated_set["total_value"] += addition2
-                if addition2 > 0 and activity_ctr_incr == False:
-                    self.activity_ctr += 1
-                    activity_ctr_incr = True 
+                if addition2 > 0 and addition_ctr_incr == False:
+                    self.addition_ctr += 1
+                    addition_ctr_incr = True 
                 self.win += addition2
 
             elif self.activity == "sstk":
@@ -875,39 +880,34 @@ def main(args):
     else:
         final_credit_array = [0]*args.iterations
         final_rtp_array = [0]*args.iterations
-        activity_ctr_array = [0]*args.iterations
+        addition_ctr_array = [0]*args.iterations
         ctr_array = [0]*args.iterations
-        threshold  = 1000
         succ_cnt = 0
+        threshold = 100 * args.denom * args.num_sets
         for ii in range(args.iterations):
             vp = Vp(args.activity, args.addition_type, args.num_sets, args.credit, args.denom, args.automate, args.verbose)
             max_ctr = 180 # Divide by 12 to get ave min
             credit_array = [0]*max_ctr
             net_50_loss = False
-            ctr = 0
             fourth_credit = False
-
-            while vp.credit >= vp.cost:
+            succ = False
+            
+            while all((vp.credit >= vp.cost, vp.ctr < max_ctr)):
                 vp.run()
-                credit_array[ctr] = vp.credit
+                credit_array[vp.ctr-2] = vp.credit
 
-                if vp.ctr >= max_ctr:
+                succ = False
+                if vp.win >= threshold:
                     succ_cnt += 1
+                    succ = True
                     break
 
-                if vp.win >= threshold: 
-                    succ_cnt += 1
-                    break
-
-                if vp.credit >= args.credit + threshold:
-                    succ_cnt += 1
-                    break
-
-                ctr += 1
+            if succ == False and vp.credit >= args.credit:
+                succ_cnt += 1
 
             final_rtp_array[ii] = vp.total_rtp / (vp.ctr - 1)
             final_credit_array[ii] = vp.credit
-            activity_ctr_array[ii] = vp.activity_ctr
+            addition_ctr_array[ii] = vp.addition_ctr
             ctr_array[ii] = vp.ctr
             if args.iterations == 1:
                 print("mean-rtp:", final_rtp_array[ii], "acc", vp.acc_ctr / (vp.ctr - 1))
@@ -919,7 +919,7 @@ def main(args):
             print("succ-pct:", succ_cnt/args.iterations,
                   "mean-succ-ctr:", statistics.mean(succ_ctr_array),
                   "max-succ-prf:", max(succ_credit_array)-args.credit, "mean-succ-pft:", statistics.mean(succ_credit_array)-args.credit,
-                  "mean-act:", statistics.mean(activity_ctr_array), 
+                  "mean-add:", statistics.mean(addition_ctr_array), 
                   "mean-rtp", statistics.median(final_rtp_array))
 
 # Command-line Execution
