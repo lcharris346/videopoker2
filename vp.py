@@ -332,18 +332,11 @@ def get_5th_element(dealt_set_4_numbers, remaining_deck1):
             potential_priority = PRIORITIES[index]
             potential_category = CATEGORIES[index]
 
-            if potential_priority == select_priority: 
+            if potential_priority == select_priority:
 
                 drmcd_number = potential_number
 
-                if updated_category == True:
-
-                    if potential_category == select_category:
-
-                        drmcd_number = potential_number
-
-                        break
-                else:
+                if updated_category == True and potential_category == select_category:
 
                     break
 
