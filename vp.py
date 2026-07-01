@@ -454,7 +454,7 @@ class Vp(object):
             if value > 1:
                 my_print((" addition"))
                 if self.verbose:
-                    input()
+                    input("continue...")
             if self.verbose:
                 time.sleep(0.5)
         return value
@@ -884,6 +884,7 @@ def main(args):
         ctr_array = [0]*args.iterations
         succ_cnt = 0
         threshold = 100 * args.denom * args.num_sets
+        
         for ii in range(args.iterations):
             vp = Vp(args.activity, args.addition_type, args.num_sets, args.credit, args.denom, args.automate, args.verbose)
             max_ctr = 180 # Divide by 12 to get ave min
@@ -926,10 +927,10 @@ def main(args):
 if __name__=="__main__":
     #args
     parser = argparse.ArgumentParser(description="vp")
-    parser.add_argument("-c", "--credit", type=float, default=1000, help="credit")
-    parser.add_argument("-d", "--denom", type=float, default=0.25, help="denom")
+    parser.add_argument("-c", "--credit", type=float, default=100, help="credit")
+    parser.add_argument("-d", "--denom", type=float, default=0.10, help="denom")
     parser.add_argument("-g", "--activity", default="fhpw", help="activity:cl,sptrp,stp,dstp,sstk,pstk,php,ultx,fhpw,majm")
-    parser.add_argument("-n", "--num_sets", type=int, default=5, help="num_sets")
+    parser.add_argument("-n", "--num_sets", type=int, default=3, help="num_sets")
     parser.add_argument("-b", "--addition_type", default="ddb", help="addition_type:job,b,db,ddb,tdb")
     parser.add_argument("-i", "--iterations", type=int, default=1, help="iterations")
     parser.add_argument("-a", "--automate", action="store_true", help="automate")
