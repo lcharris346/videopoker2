@@ -481,7 +481,7 @@ class SL(object):
         # init
         ret = 0
         if self.verbose:
-            os.system("cls")
+            os.system("clear")
         
         self.get_session_symbols()
         self.get_session_lines()
@@ -593,8 +593,8 @@ if __name__=="__main__":
     #args
     parser = argparse.ArgumentParser(description="vp")
     parser.add_argument("-c", "--credit", type=int, default=1000, help="credit")
-    parser.add_argument("-d", "--denom", default=1, help="denom")
-    parser.add_argument("-m", "--multi", default=10, help="multi:1-10")
+    parser.add_argument("-d", "--denom", type=int, default=1, help="denom")
+    parser.add_argument("-m", "--multi", type=int, default=10, help="multi:1-10")
     parser.add_argument("-n", "--num_lines", type=int, default=len(PAYLINES2), help="num_lines:1 - 100")
     parser.add_argument("-i", "--iterations", type=int, default=1, help="iterations")
     parser.add_argument("-a", "--automate", action="store_true", help="automate")
