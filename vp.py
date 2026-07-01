@@ -429,6 +429,7 @@ class Vp(object):
         self.set_multis = [0]*self.num_sets
         self.max_cost = self.denom * self.num_sets * MAX_COST[self.activity]
         self.cost = self.max_cost
+        self.max_win = 0
         self.set_num_sets(num_sets)
         self.update_paytable()
         my_print((self.activity, self.addition_type, self.num_sets, self.max_cost, self.credit))
@@ -1039,6 +1040,8 @@ class Vp(object):
                 
         # update credit, ctr, rtp
         self.win = self.win * self.denom
+        if self.win > self.max_win:
+            self.max_win = self.win
         self.credit += self.win - self.cost
         rtp = self.win / self.cost
         self.total_rtp += rtp
@@ -1059,6 +1062,7 @@ def main(args):
         final_rtp_array = [0]*args.iterations
         addition_ctr_array = [0]*args.iterations
         ctr_array = [0]*args.iterations
+        max_win_array = [0]*args.iterations
         succ_cnt = 0
         threshold = 400 * args.denom
         
@@ -1087,6 +1091,7 @@ def main(args):
             final_rtp_array[ii] = vp.total_rtp / (ctr)
             final_credit_array[ii] = vp.credit
             addition_ctr_array[ii] = vp.addition_ctr
+            max_win_array[ii] = vp.max_win
             ctr_array[ii] = vp.ctr
             if args.iterations == 1:
                 print("mean-rtp:", final_rtp_array[ii], "acc", vp.acc_ctr / (vp.ctr - 1))
@@ -1097,6 +1102,7 @@ def main(args):
             succ_ctr_array = [x for ii, x in enumerate(ctr_array) if final_credit_array[ii] > vp.cost ]
             succ_credit_array = [x for ii, x in enumerate(final_credit_array) if final_credit_array[ii] > vp.cost ]
             print(
+                  "mean-max_win", statistics.mean(max_win_array),
                   "succ-pct:", succ_cnt/args.iterations,
                   "mean-succ-ctr:", statistics.mean(succ_ctr_array),
                   "mean-succ-pft:", statistics.mean(succ_credit_array)-args.credit,
