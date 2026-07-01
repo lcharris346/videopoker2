@@ -3,6 +3,7 @@ from ast import Add
 import random
 import copy
 import argparse
+from select import select
 import time
 import os
 import sys
@@ -51,7 +52,7 @@ VALUETABLE["tdb"] = {" rf": 4000, " sf":  250,
                      "  q":  250, "qak": 4000, " qa": 800, "qlk": 2000, " ql": 400, 
                      " fh":   40, " fl":   25, "str":  20, "3ok":  10, "2pr":   5, "job": 5, " hc": 0}
 
-MAX_COST = {"cl": 5, "sptrp": 6, "stp": 6, "dstp": 7, "sstk": 10, "pstk": 10,"ultx": 10,  "fhpw": 10, "majm": 10, "php": 10 }
+MAX_COST = {"cl": 5, "sptrp": 6, "stp": 6, "dstp": 7, "sstk": 10, "pstk": 10,"ultx": 10,  "fhpw": 10, "majm": 10, "php": 10, "drmcd": 10 }
 
 CHOICES = ("", "1", "2", "3", "4", "5", "a")
 NUM_SETS = (3,5,10)
@@ -193,7 +194,162 @@ def is_pr(updated_set):
     result = (updated_set["num_zeros"] == 1)
     return result
 
-def get_set_type(updated_set):
+def get_5th_element(dealt_set_4_numbers, remaining_deck1):
+
+        drmcd_number = remaining_deck1[0]
+        drmcd_number_index = drmcd_number - 1
+
+        dealt_set_4 = copy.deepcopy(UPDATED_SET)
+        dealt_set_4["numbers"] = dealt_set_4_numbers
+        dealt_set_4["name"] = get_set_data(dealt_set_4)
+        my_print(("DEBUG:", dealt_set_4, STACK_ELEMENTS[drmcd_number_index]))
+
+        select_priority = PRIORITIES[drmcd_number_index]
+        select_category = CATEGORIES[drmcd_number_index]
+
+        updated_category = False
+        
+        # quads
+        if dealt_set_4["num_zeros"] == 3:
+
+            quad_priority = dealt_set_4["sorted_priorities"][0]
+
+            if quad_priority == 14:
+                select_priority = 2
+
+            elif quad_priority < 5:
+                select_priority = 14
+
+        # 4 to a royal flush
+        elif dealt_set_4["category_diffs"] == [0,0,0] and dealt_set_4["sorted_priorities"][0] > 9:
+
+            select_priority = [x for x in range(10,15) if x not in dealt_set_4["sorted_priorities"]][0]
+
+            select_category = dealt_set_4["sorted_categories"][0]
+
+            updated_category = True
+
+        # 3 to a royal flush
+        elif dealt_set_4["num_zeros_categories"] == 2 and dealt_set_4["sorted_priorities"][1] > 9:
+
+            sorted_numbers = [x for ii,x in enumerate(dealt_set_4["sorted_numbers_categories"][:-1]) if dealt_set_4["category_diffs"][ii] == 0 ]
+
+            sorted_numbers_categories = [x for ii,x in enumerate(dealt_set_4["sorted_numbers"][:-1]) if dealt_set_4["sorted_priorities"][ii] > 9 ]
+
+            if set(sorted_numbers) == set(sorted_numbers_categories):
+
+                select_priority = [x for x in range(10,15) if x not in dealt_set_4["sorted_priorities"]][0]
+
+                select_category = [x for ii,x in enumerate(dealt_set_4["sorted_categories"][:-1]) if dealt_set_4["category_diffs"][ii] == 0 ][0]
+
+            updated_category = True
+
+        # 2 pair, trips
+        elif dealt_set_4["num_zeros"] == 2:
+
+            for ii, x in enumerate(dealt_set_4["sorted_priorities"][:-1]):
+
+                # 2 pair
+                if dealt_set_4["priorities_diffs"][ii] == 0:
+
+                    select_priority = dealt_set_4["sorted_priorities"][ii]
+
+                    #trips
+                    if ii < 2 and dealt_set_4["priorities_diffs"][ii+1] == 0:
+                         select_priority = dealt_set_4["sorted_priorities"][ii]
+                         break
+
+                    
+
+        # pair
+        elif dealt_set_4["num_zeros"] == 1:
+            select_priority = [x for ii, x in enumerate(dealt_set_4["sorted_priorities"][:-1]) if dealt_set_4["priorities_diffs"][ii] == 0][0]
+
+        
+
+        # 4 to a str
+        elif dealt_set_4["priorities_diffs"] == [1,1,1]:
+            
+            if dealt_set_4["sorted_priorities"][0] == 2:
+
+                select_priority = dealt_set_4["sorted_priorities"][3] + 1
+
+            else:
+
+                select_priority = dealt_set_4["sorted_priorities"][0] - 1
+
+        # 3 to a str
+        elif dealt_set_4["sorted_priorities"][2] - dealt_set_4["sorted_priorities"][0] < 5:
+
+            test_range = range(dealt_set_4["sorted_priorities"][0], dealt_set_4["sorted_priorities"][2] + 1)
+
+            select_priorities = [x for x in test_range if x not in dealt_set_4["sorted_priorities"]]
+
+            if len(select_priorities) > 0:
+
+                select_priority = select_priorities[0]
+
+            else:
+
+                select_priority = dealt_set_4["sorted_priorities"][0] - 1 if dealt_set_4["sorted_priorities"][0] > 2 else dealt_set_4["sorted_priorities"][2] + 1
+
+
+        elif dealt_set_4["sorted_priorities"][3] - dealt_set_4["sorted_priorities"][1] < 5:
+
+            test_range = range(dealt_set_4["sorted_priorities"][1], dealt_set_4["sorted_priorities"][3] + 1)
+
+            select_priorities = [x for x in test_range if x not in dealt_set_4["sorted_priorities"]]
+
+            if len(select_priorities) > 0:
+
+                select_priority = select_priorities[0]
+
+            else:
+
+                select_priority = dealt_set_4["sorted_priorities"][1] - 1 if dealt_set_4["sorted_priorities"][1] > 2 else dealt_set_4["sorted_priorities"][3] + 1
+
+        # hc
+        else:
+            select_priority = dealt_set_4["sorted_priorities"][-1]
+
+        if updated_category == False:
+            # 4 to a flush
+            if dealt_set_4["category_diffs"] == [0,0,0]:
+                select_category = dealt_set_4["sorted_categories"][0]
+
+            # 3 to a flush
+            elif dealt_set_4["num_zeros_categories"] == 2:
+
+                select_categories = [x for ii,x in enumerate(dealt_set_4["sorted_categories"][:-1]) if dealt_set_4["category_diffs"][ii] == 0]
+
+                select_category = select_categories[0]
+
+
+        # find elements with priority and category
+        for potential_number in remaining_deck1:
+
+            index = potential_number - 1
+            potential_priority = PRIORITIES[index]
+            potential_category = CATEGORIES[index]
+
+            if potential_priority == select_priority: 
+
+                drmcd_number = potential_number
+
+                if updated_category == True:
+
+                    if potential_category == select_category:
+
+                        drmcd_number = potential_number
+
+                        break
+                else:
+
+                    break
+
+        return drmcd_number
+
+def get_set_data(updated_set):
     updated_set["elements"] = [STACK_ELEMENTS[x-1] for x in updated_set["numbers"]]
     updated_set["priorities"] = [PRIORITIES[x-1] for x in updated_set["numbers"] ]
     updated_set["sorted_priorities"] = sorted(updated_set["priorities"])
@@ -207,6 +363,12 @@ def get_set_type(updated_set):
     updated_set["category_diffs"] = [next_element - current_element for current_element, next_element in zip(updated_set["sorted_categories"], updated_set["sorted_categories"][1:])]
     updated_set["num_zeros_categories"] = len([x for x in updated_set["category_diffs"] if x == 0])
     updated_set["sorted_numbers_categories"] = [ x for _, x in sorted(zip(updated_set["categories"], updated_set["numbers"]))]
+
+    return updated_set
+
+
+def get_set_type(updated_set):
+    updated_set = get_set_data(updated_set)
     name = " hc"
     value = 0
 
@@ -253,17 +415,6 @@ def get_set_type(updated_set):
         name = " hc"
 
     return name
-
-
-
-
-
-
-
-
-
-
-
 
 ######################################## CLASSES  ########################################
 class Vp(object):
@@ -453,8 +604,8 @@ class Vp(object):
             value = addition[name]
             if value > 1:
                 my_print((" addition"))
-                if self.verbose:
-                    input("continue...")
+                #if self.verbose:
+                #    input("continue...")
             if self.verbose:
                 time.sleep(0.5)
         return value
@@ -650,21 +801,59 @@ class Vp(object):
 
         return total_value
 
+    def get_dealt_set_drmcd(self, dealt_set, deck):
+
+        dealt_set_4_numbers = deck[:4]
+        drmcd_number = deck[4]
+        remaining_deck1 = deck[4:]
+        addition_ctr_incr = False
+
+        if random.choice(range(6)) == 5:
+            addition_ctr_incr = True
+            
+            dealt_set_4_elements = [ STACK_ELEMENTS[x-1] for x in dealt_set_4_numbers]
+            my_print(" addition")
+
+            # drmcd algorithm
+            drmcd_number = get_5th_element(dealt_set_4_numbers, remaining_deck1)
+
+            my_print((" drmcd:", dealt_set_4_elements + [STACK_ELEMENTS[drmcd_number-1]]))
+
+            if self.verbose:
+                user_input = input("continue...")
+                if user_input in ("q", "e"):
+                    sys.exit()
+
+            if self.verbose:
+                time.sleep(0.5)
+
+        dealt_set["numbers"] = dealt_set_4_numbers + [drmcd_number]
+        remaining_deck = [ x for x in remaining_deck1 if x != drmcd_number ]
+
+        return dealt_set, remaining_deck, addition_ctr_incr
+
           
     def run(self):
 
         # init
         self.win = 0
-        deck = copy.deepcopy(STACK)
-        random.shuffle(deck)
-        dealt_set = copy.deepcopy(UPDATED_SET)
-        dealt_set["numbers"] = deck[:5]
-        dealt_set["elements"] = [STACK_ELEMENTS[x-1] for x in dealt_set["numbers"]]
-        dealt_set["name"] = get_set_type(dealt_set)
-        remaining_deck = deck[5:]
         addition = None
         addition_ctr_incr = False
 
+        deck = copy.deepcopy(STACK)
+        random.shuffle(deck)
+        dealt_set = copy.deepcopy(UPDATED_SET)
+
+        if self.activity == "drmcd":
+            dealt_set, remaining_deck, addition_ctr_incr = self.get_dealt_set_drmcd(dealt_set, deck)
+            if addition_ctr_incr:
+                self.addition_ctr += 1
+        else:
+            dealt_set["numbers"] = deck[:5]
+            remaining_deck = deck[5:]
+
+        dealt_set["elements"] = [STACK_ELEMENTS[x-1] for x in dealt_set["numbers"]]
+        dealt_set["name"] = get_set_type(dealt_set)
 
         #pre-update additions
         if self.cost == self.max_cost:
@@ -867,11 +1056,6 @@ class Vp(object):
 
         self.ctr += 1
 
-# Tests
-
-def test(vp):
-    pass
-
 # Main Function
 def main(args):
     if args.test == True:
@@ -883,7 +1067,7 @@ def main(args):
         addition_ctr_array = [0]*args.iterations
         ctr_array = [0]*args.iterations
         succ_cnt = 0
-        threshold = 100 * args.denom * args.num_sets
+        threshold = 400 * args.denom
         
         for ii in range(args.iterations):
             vp = Vp(args.activity, args.addition_type, args.num_sets, args.credit, args.denom, args.automate, args.verbose)
@@ -892,10 +1076,11 @@ def main(args):
             net_50_loss = False
             fourth_credit = False
             succ = False
-            
-            while all((vp.credit >= vp.cost, vp.ctr < max_ctr)):
+            ctr = 0
+            while all((vp.credit >= vp.cost, ctr < max_ctr)):
                 vp.run()
-                credit_array[vp.ctr-2] = vp.credit
+                credit_array[ctr] = vp.credit
+                ctr += 1
 
                 succ = False
                 if vp.win >= threshold:
@@ -906,7 +1091,7 @@ def main(args):
             if succ == False and vp.credit >= args.credit:
                 succ_cnt += 1
 
-            final_rtp_array[ii] = vp.total_rtp / (vp.ctr - 1)
+            final_rtp_array[ii] = vp.total_rtp / (ctr)
             final_credit_array[ii] = vp.credit
             addition_ctr_array[ii] = vp.addition_ctr
             ctr_array[ii] = vp.ctr
@@ -914,24 +1099,41 @@ def main(args):
                 print("mean-rtp:", final_rtp_array[ii], "acc", vp.acc_ctr / (vp.ctr - 1))
                 #plt.plot(credit_array[0:vp.ctr-1])
                 #splt.show()
+
         if args.iterations > 1:
             succ_ctr_array = [x for ii, x in enumerate(ctr_array) if final_credit_array[ii] > vp.cost ]
             succ_credit_array = [x for ii, x in enumerate(final_credit_array) if final_credit_array[ii] > vp.cost ]
-            print("succ-pct:", succ_cnt/args.iterations,
+            print(
+                  "succ-pct:", succ_cnt/args.iterations,
                   "mean-succ-ctr:", statistics.mean(succ_ctr_array),
-                  "max-succ-prf:", max(succ_credit_array)-args.credit, "mean-succ-pft:", statistics.mean(succ_credit_array)-args.credit,
+                  "mean-succ-pft:", statistics.mean(succ_credit_array)-args.credit,
+                  "max-prf:", max(succ_credit_array)-args.credit,
+                  "mean-pft:", statistics.mean(final_credit_array)-args.credit,
                   "mean-add:", statistics.mean(addition_ctr_array), 
-                  "mean-rtp", statistics.median(final_rtp_array))
+                  "mean-rtp", statistics.median(final_rtp_array),
+            )
+
+# Tests
+
+def test(vp):
+    deck = copy.deepcopy(STACK)
+    random.shuffle(deck)
+    dealt_set = copy.deepcopy(UPDATED_SET)
+    dealt_set_4_elements = input("Enter 4 Elements:").rstrip("\n").split(",")
+    dealt_set_4_numbers = [ STACK_ELEMENTS_DICT[x] for x in dealt_set_4_elements]
+    remaining_deck1 = [x for x in deck if x not in dealt_set_4_numbers]
+    drmcd_number = get_5th_element(dealt_set_4_numbers, remaining_deck1)
+    print("DEBUG: 5th-element", STACK_ELEMENTS[drmcd_number-1])
 
 # Command-line Execution
 if __name__=="__main__":
     #args
     parser = argparse.ArgumentParser(description="vp")
-    parser.add_argument("-c", "--credit", type=float, default=100, help="credit")
-    parser.add_argument("-d", "--denom", type=float, default=0.10, help="denom")
-    parser.add_argument("-g", "--activity", default="fhpw", help="activity:cl,sptrp,stp,dstp,sstk,pstk,php,ultx,fhpw,majm")
+    parser.add_argument("-c", "--credit", type=float, default=1000, help="credit")
+    parser.add_argument("-d", "--denom", type=float, default=1, help="denom")
+    parser.add_argument("-g", "--activity", default="sptrp", help="activity:cl,sptrp,stp,dstp,sstk,pstk,php,ultx,fhpw,majm, drmcd")
     parser.add_argument("-n", "--num_sets", type=int, default=3, help="num_sets")
-    parser.add_argument("-b", "--addition_type", default="ddb", help="addition_type:job,b,db,ddb,tdb")
+    parser.add_argument("-b", "--addition_type", default="bd", help="addition_type:job,b,bd,db,ddb,tdb")
     parser.add_argument("-i", "--iterations", type=int, default=1, help="iterations")
     parser.add_argument("-a", "--automate", action="store_true", help="automate")
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose")
