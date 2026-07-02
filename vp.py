@@ -1045,7 +1045,7 @@ class Vp(object):
         self.credit += self.win - self.cost
         rtp = self.win / self.cost
         self.total_rtp += rtp
-        my_print((self.ctr, -self.cost, self.win, self.credit, round(rtp,3)))
+        my_print((self.ctr, round(-self.cost,3), round(self.win,3), round(self.credit,3), round(rtp,3)))
         
         if self.automate and self.verbose:
             time.sleep(0.3)
@@ -1064,23 +1064,24 @@ def main(args):
         ctr_array = [0]*args.iterations
         max_win_array = [0]*args.iterations
         succ_cnt = 0
-        threshold = 400 * args.denom
+        threshold = VALUETABLE[args.addition_type]["  q"] * args.denom
         
         for ii in range(args.iterations):
             vp = Vp(args.activity, args.addition_type, args.num_sets, args.credit, args.denom, args.automate, args.verbose)
-            max_ctr = 180 # Divide by 12 to get ave min
+            max_ctr = 720 # Divide by 12 to get ave min
             credit_array = [0]*max_ctr
             net_50_loss = False
             fourth_credit = False
             succ = False
             ctr = 0
-            while all((vp.credit >= vp.cost, ctr < max_ctr)):
+            while vp.credit >= vp.cost:
                 vp.run()
                 credit_array[ctr] = vp.credit
                 ctr += 1
 
                 succ = False
-                if vp.win >= threshold:
+                if any((vp.win >= threshold, vp.credit > args.credit + threshold, ctr >= max_ctr)):
+                #if ctr >= max_ctr:
                     succ_cnt += 1
                     succ = True
                     break
@@ -1102,14 +1103,14 @@ def main(args):
             succ_ctr_array = [x for ii, x in enumerate(ctr_array) if final_credit_array[ii] > vp.cost ]
             succ_credit_array = [x for ii, x in enumerate(final_credit_array) if final_credit_array[ii] > vp.cost ]
             print(
-                  "mean-max_win", statistics.mean(max_win_array),
-                  "succ-pct:", succ_cnt/args.iterations,
-                  "mean-succ-ctr:", statistics.mean(succ_ctr_array),
-                  "mean-succ-pft:", statistics.mean(succ_credit_array)-args.credit,
-                  "max-prf:", max(succ_credit_array)-args.credit,
-                  "mean-pft:", statistics.mean(final_credit_array)-args.credit,
-                  "mean-add:", statistics.mean(addition_ctr_array), 
-                  "mean-rtp", statistics.median(final_rtp_array),
+                  "mean-max_win", round(statistics.mean(max_win_array),3),
+                  "succ-pct:", round(succ_cnt/args.iterations,3),
+                  "mean-succ-ctr:", round(statistics.mean(succ_ctr_array),3),
+                  "mean-succ-pft:", round(statistics.mean(succ_credit_array)-args.credit,3),
+                  "max-prf:", round(max(succ_credit_array)-args.credit,3),
+                  "mean-pft:", round(statistics.mean(final_credit_array)-args.credit,3),
+                  "mean-add:", round(statistics.mean(addition_ctr_array),3), 
+                  "mean-rtp", round(statistics.median(final_rtp_array),3),
             )
 
 # Tests
@@ -1128,9 +1129,9 @@ def test(vp):
 if __name__=="__main__":
     #args
     parser = argparse.ArgumentParser(description="vp")
-    parser.add_argument("-c", "--credit", type=float, default=1000, help="credit")
-    parser.add_argument("-d", "--denom", type=float, default=1, help="denom")
-    parser.add_argument("-g", "--activity", default="sptrp", help="activity:cl,sptrp,stp,dstp,sstk,pstk,php,ultx,fhpw,majm, drmcd")
+    parser.add_argument("-c", "--credit", type=float, default=100, help="credit")
+    parser.add_argument("-d", "--denom", type=float, default=0.05, help="denom")
+    parser.add_argument("-g", "--activity", default="stp", help="activity:cl,sptrp,stp,dstp,sstk,pstk,php,ultx,fhpw,majm, drmcd")
     parser.add_argument("-n", "--num_sets", type=int, default=3, help="num_sets")
     parser.add_argument("-b", "--addition_type", default="bd", help="addition_type:job,b,bd,db,ddb,tdb")
     parser.add_argument("-i", "--iterations", type=int, default=1, help="iterations")

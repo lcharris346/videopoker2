@@ -10,17 +10,26 @@ import matplotlib.pyplot as plt
 import statistics
 
 # Constants
-OUTPUT = ["",]
+OUTPUT = open("sample.txt").readlines()
 COLUMNS = [0] *5
 ROWS =  [[0] * 5] *3
 PAYLINES = (
 
-    # straight
+    # straight. 9
+    #                       0 0 0 0 0
+    #                       . . . . .
+    #                       . . . . .
     (1,1,1),    (1,1,1,1),  (1,1,1,1,1),
+    #                       . . . . .
+    #                       0 0 0 0 0
+    #                       . . . . .
     (2,2,2),    (2,2,2,2),  (2,2,2,2,2),
+    #                       . . . . .
+    #                       . . . . .
+    #                       0 0 0 0 0
     (3,3,3),    (3,3,3,3),  (3,3,3,3,3),
 
-    # Y-axis (bilateral) symmetry
+    # Y-axis (bilateral) symmetry. 27
     # Valleys
     #                       0 0 . 0 0
     #                       . . 0 . .
@@ -53,7 +62,7 @@ PAYLINES = (
     (2,3,3),    (2,3,3,3),  (2,3,3,3,2),    
                             
 
-    # Hills
+    # Hills. 27
     #                       . 0 0 0 .
     #                       0 . . . 0  
     #                       . . . . .
@@ -83,7 +92,7 @@ PAYLINES = (
     #                       0 0 . 0 0
     (3,3,2),    (3,3,2,3),  (3,3,2,3,3),
           
-    # Ws
+    # Ws. 15
     #                       0 . 0 . 0
     #                       . 0 . 0 .  
     #                       . . . . .
@@ -105,7 +114,7 @@ PAYLINES = (
     #                       . 0 . 0 .
     (2,3,2),    (2,3,2,3),  (2,3,2,3,2),
 
-    # Ms
+    # Ms. 15
     #                       . 0 . 0 .
     #                       0 . 0 . 0  
     #                       . . . . .
@@ -128,7 +137,7 @@ PAYLINES = (
     (3,2,3),    (3,2,3,2),  (3,2,3,2,3),
 
     # Z-axis (rotational) symmetry
-    # Ns
+    # Ns. 8
     #                       0 . . 0 .
     #                       . . 0 . .  
     #                       . 0 . . 0
@@ -146,7 +155,7 @@ PAYLINES = (
     #                       0 . . 0 .
                 (3,1,2,3),  (3,1,2,3,1),
 
-    # 1-Sided Hills
+    # Ss. 6
     #                       . . . . 0
     #                       . 0 0 0 .  
     #                       0 . . . .
@@ -164,28 +173,37 @@ PAYLINES = (
     #                       0 0 . . .
                 (3,3,2,1),  (3,3,2,1,1),
 
-    # Non-symmetric
-    #                       0 . . . .
-    #                       . . . . 0  
-    #                       . 0 0 0 .
-                            (1,3,3,3,2),
-    #                       0 . . . .
-    #                       . . . . .  
-    #                       . 0 0 0 0
-                            (1,3,3,3,3),
-    #                       . . . . 0
-    #                       0 . . . .  
-    #                       . 0 0 0 .
-                            (2,3,3,3,1),
-   
-    #                       . 0 0 0 .
-    #                       . . . . 0  
-    #                       0 . . . .
-                            (3,1,1,1,2),
-    #                       . 0 0 0 0
-    #                       . . . . .  
-    #                       0 . . . .
-                            (3,1,1,1,1),
+    # Non-symmetric. 5
+    #           . 0 0 . .
+    #           0 . . 0 .  
+    #           . . . . .
+                (2,1,1,2),
+
+    #           . . . . .
+    #           0 . . 0 .  
+    #           . 0 0 . .
+                (2,3,3,2),
+
+    #           . . . . .
+    #           . 0 0 . .  
+    #           0 . . 0 .
+                (3,2,2,3),
+
+    #           0 . . 0 .
+    #           . 0 0 . .  
+    #           . . . . .
+                (1,2,2,1),
+
+    #           . 0 0 . .
+    #           . . . . .  
+    #           0 . . 0.
+                (3,1,1,3),
+
+  
+
+    
+
+    
 )
 PAYLINES2 = []
 for line in PAYLINES:
@@ -197,8 +215,6 @@ for line in PAYLINES:
         if (len(line2)) > 4:
             line2[4] += 12
     PAYLINES2.append(line2)
-
-
 
 MIN_VAL = 1
 SYMBOLS = {
@@ -236,7 +252,7 @@ MNY = {
     "MNR": {"worth":  100, "lines": [], "pay_lines": [],  "value": 0},
     "MXI": {"worth":  200, "lines": [], "pay_lines": [],  "value": 0},
     "MJR": {"worth":  500, "lines": [], "pay_lines": [],  "value": 0},
-    "GRD": {"worth":10000, "lines": [], "pay_lines": [],  "value": 0},
+    #"GRD": {"worth":10000, "lines": [], "pay_lines": [],  "value": 0},
 }
 GRAND_WORTH = MNY["MJR"]["worth"]*10
 KEYS_MNY = list(MNY.keys())
@@ -256,20 +272,17 @@ DISTRO_SYMBOLS_MNY = DISTRO_SYMBOLS + DISTRO_MNY
 #print(DISTRO_SYMBOLS_MNY)
 #sys.exit()
 
-
-
 # Functions
 def my_decorator(func):
     def wrapper(statement):
         choice = random.choice(range(len(OUTPUT)))
-        line = str(statement) +" "+ OUTPUT[choice]
+        line = str(statement).replace("'","").replace(",","") +" "+ OUTPUT[choice].rstrip("\n")
         func(line)
     return wrapper
 
 @my_decorator
 def my_print(statement):
     print(statement)
-
 
 ######################################## CLASSES  ########################################
 class SL(object):
@@ -283,7 +296,7 @@ class SL(object):
         self.verbose = verbose
         self.mean_rtp = 0
         self.cost = denom * multi
-        self.adj_symbol_worth = self.cost / num_lines
+        self.adj_symbol_worth = 2.0 * self.cost / num_lines
         
         self.columns = copy.deepcopy(COLUMNS)
         self.rows = copy.deepcopy(ROWS)
@@ -310,8 +323,6 @@ class SL(object):
         self.max_ctr = 0
         self.win = 0
 
-    
-            
     def free_spin(self):
         total_addition = 0
         for ii in range(3):
@@ -320,6 +331,9 @@ class SL(object):
             total_addition += self.spin()
             if self.verbose:
                 time.sleep(0.2)
+                user_input = input("FS >")
+                if user_input in ("q", "e"):
+                    sys.exit()
 
         my_print(("FS Complete.", total_addition))
 
@@ -337,28 +351,26 @@ class SL(object):
             my_print(("H&S", spins, "left"))
             orb_falls = False
             orbs = 0
-            grand_hit = False
             for row in range(3):
                 for col in range(5):
-                    if rows[row][col] not in KEYS_MNY:
-                        hs_symbols = DISTRO_MNY + [0] * (num_orbs + 1) ** 4
-                        symbol = random.choice(hs_symbols)
-                        if symbol in KEYS_MNY:
-                            rows[row][col] = symbol
-                            orb_falls = True
-                            num_orbs += 1
-                            orbs += MNY[symbol]["worth"]
+                    if num_orbs < 14 or random.randint(1,200000) == 1: # Set GRAND odds
+                        if rows[row][col] not in KEYS_MNY:
+                            hs_symbols = DISTRO_MNY + [0] * (num_orbs + 1) ** 4
+                            symbol = random.choice(hs_symbols)
+                            if symbol in KEYS_MNY:
+                                rows[row][col] = symbol
+                                orb_falls = True
+                                num_orbs += 1
+                                orbs += MNY[symbol]["worth"]
+                            else:
+                                rows[row][col] = "  "
                         else:
-                            rows[row][col] = "  "
-                    else:
-                        orbs += MNY[rows[row][col]]["worth"]
-                        num_orbs += 1
-                    if rows[row][col] == "GRD":
-                        grand_hit = True
+                            orbs += MNY[rows[row][col]]["worth"]
+                            num_orbs += 1
                             
                 row_str = str(rows[row]).replace("'","")
                 my_print(row_str)
-            if grand_hit or num_orbs > 14:
+            if num_orbs > 14:
                 #if self.verbose:
                 print(self.ctr, "GRAND!")
                 total_addition += GRAND_WORTH
@@ -369,6 +381,9 @@ class SL(object):
             my_print("")
             if self.verbose:
                 time.sleep(0.2)
+                user_input = input("HS >")
+                if user_input in ("q", "e"):
+                    sys.exit()
 
         addition = self.cost*orbs
         total_addition += addition
@@ -424,8 +439,6 @@ class SL(object):
 
         return paylines
         
-
-
     def get_lines(self, indeces):
 
         lines = []
@@ -459,8 +472,6 @@ class SL(object):
             indeces = [ii+1 for ii,x in enumerate(self.session_symbols) if x in (key, WLD)]
             self.symbols[key]["lines"] = self.get_lines(indeces)
 
-            
-
     def get_session_symbols(self):
         self.session_symbols = []
         self.columns = copy.deepcopy(COLUMNS)
@@ -481,7 +492,10 @@ class SL(object):
         # init
         ret = 0
         if self.verbose:
-            os.system("clear")
+            
+            #os.system("clear")
+            #os.system("cls")
+            pass
         
         self.get_session_symbols()
         self.get_session_lines()
@@ -499,6 +513,7 @@ class SL(object):
         self.max_ctr = 180
         total_rtp = 0
         init_credit = self.credit
+        threshold = 20 * self.cost 
 
         while self.credit > self.cost and self.ctr < self.max_ctr:
 
@@ -510,6 +525,10 @@ class SL(object):
 
             # spin
             ret = self.spin()
+            self.ctr += 1
+            if ret > GRAND_WORTH:
+                break
+            
             
             # update ret, credit, rtp
             self.win = ret - self.cost
@@ -518,15 +537,14 @@ class SL(object):
             self.credit += self.win
 
             #results
-            self.ctr += 1
-
+            
             my_print(("ctr", self.ctr, "cost", -self.cost, "ret", round(ret,2), "cr", round(self.credit,2), "\n"))
             
             if self.verbose:
                 time.sleep(0.1)
 
-            if ret >= GRAND_WORTH:
-                break
+            #if any((self.credit >= init_credit + threshold, self.win > threshold)):
+            
 
         self.mean_rtp = total_rtp / self.ctr
         #os.system("cls")
@@ -558,6 +576,8 @@ def main(args):
         ctr_array = [0]*args.iterations
         threshold  = 1000
         succ_cnt = 0
+        success = False
+        threshold = args.denom * args.multi
         for ii in range(args.iterations):
 
             if args.iterations > 1:
@@ -568,10 +588,7 @@ def main(args):
             sl = SL(args.num_lines, args.denom, args.multi, args.credit, args.automate, args.verbose)
             sl.run()
 
-            if sl.credit > 2 * args.credit:
-                succ_cnt += 1
-
-            if sl.win > args.credit:
+            if any((sl.credit > args.credit, sl.win > threshold)):
                 succ_cnt += 1
 
             final_rtp_array[ii] = sl.mean_rtp
@@ -593,7 +610,7 @@ if __name__=="__main__":
     #args
     parser = argparse.ArgumentParser(description="vp")
     parser.add_argument("-c", "--credit", type=int, default=1000, help="credit")
-    parser.add_argument("-d", "--denom", type=int, default=1, help="denom")
+    parser.add_argument("-d", "--denom", type=float, default=1, help="denom")
     parser.add_argument("-m", "--multi", type=int, default=10, help="multi:1-10")
     parser.add_argument("-n", "--num_lines", type=int, default=len(PAYLINES2), help="num_lines:1 - 100")
     parser.add_argument("-i", "--iterations", type=int, default=1, help="iterations")
